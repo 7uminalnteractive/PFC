@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PFC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --night: #0A1628;
+      --field: #1B4332;
+      --gold: #F59E0B;
+      --gold-light: #FCD34D;
+      --white: #FFFFFF;
+      --gray: #E5E7EB;
+      --gray-mid: #9CA3AF;
+      --danger: #EF4444;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--night);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      padding: 24px 0;
+    }
+    /* Field lines background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(27,67,50,0.4) 0%, transparent 70%),
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(255,255,255,0.03) 59px, rgba(255,255,255,0.03) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(255,255,255,0.03) 59px, rgba(255,255,255,0.03) 60px);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px; height: 300px;
+      border: 2px solid rgba(255,255,255,0.04);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+    }
+    .logo-area {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo-icon {
+      font-size: 52px;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 20px rgba(245,158,11,0.5));
+    }
+    .logo-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 3px;
+      color: var(--white);
+      line-height: 1;
+    }
+    .logo-title span { color: var(--gold); }
+    .logo-sub {
+      font-size: 13px;
+      color: var(--gray-mid);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 36px 32px;
+      backdrop-filter: blur(20px);
+    }
+    .card h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--white);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .field-group { margin-bottom: 18px; }
+    .field-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gray-mid);
+      margin-bottom: 8px;
+    }
+    .field-group input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 15px;
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .field-group input::placeholder { color: rgba(255,255,255,0.25); }
+    .field-group input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--gold);
+      color: var(--night);
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { background: var(--gold-light); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    .divider span { font-size: 12px; color: var(--gray-mid); }
+
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      color: var(--gray-mid);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+    .msg-error {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #FCA5A5;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-top: 14px;
+      display: none;
+    }
+    .msg-error.show { display: block; }
+
+    /* Toggle tabs */
+    .tabs {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-mid);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--gold);
+      color: var(--night);
+    }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-area">
+      <span class="logo-icon">⚽</span>
+      <div class="logo-title">PFC<span>+</span></div>
+      <div class="logo-sub">Bolão Nação Feirense</div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Entrar</button>
+        <button class="tab" onclick="switchTab('register')">Criar conta</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="form-section active" id="form-login">
+        <div class="field-group">
+          <label>E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" />
+        </div>
+        <div class="field-group">
+          <label>Senha</label>
+          <input type="password" id="login-password" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" onclick="handleLogin()">ENTRAR</button>
+        <div class="msg-error" id="login-error"></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="form-section" id="form-register">
+        <div class="field-group">
+          <label>Seu nome</label>
+          <input type="text" id="reg-name" placeholder="Como quer aparecer no bolão" />
+        </div>
+        <div class="field-group">
+          <label>E-mail</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" />
+        </div>
+        <div class="field-group">
+          <label>Senha</label>
+          <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <button class="btn-primary" onclick="handleRegister()">CRIAR CONTA</button>
+        <div class="msg-error" id="reg-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ══════════════════════════════════════════
+    // CONFIGURE AQUI SEU SUPABASE
+    // ══════════════════════════════════════════
+    const SUPABASE_URL = 'https://qecmdpcitynwtwnnbnve.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_yxsP-KP5ntSlfkTn7nqMjw_-Pfk_ncc';
+    const ADMIN_EMAIL  = 'pfcpalpitesofc@gmail.com'; // Email do admin
+    // ══════════════════════════════════════════
+
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('form-' + tab).classList.add('active');
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass  = document.getElementById('login-password').value;
+      const err   = document.getElementById('login-error');
+      err.classList.remove('show');
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) { err.textContent = 'E-mail ou senha incorretos.'; err.classList.add('show'); return; }
+
+      if (email === ADMIN_EMAIL) {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'participant.html';
+      }
+    }
+
+    async function handleRegister() {
+      const name  = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass  = document.getElementById('reg-password').value;
+      const err   = document.getElementById('reg-error');
+      err.classList.remove('show');
+
+      if (!name) { err.textContent = 'Informe seu nome.'; err.classList.add('show'); return; }
+      if (pass.length < 6) { err.textContent = 'Senha deve ter no mínimo 6 caracteres.'; err.classList.add('show'); return; }
+
+      const { data, error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { full_name: name }, emailRedirectTo: null }
+      });
+      if (error) { err.textContent = error.message; err.classList.add('show'); return; }
+
+      // Faz login direto sem esperar confirmação de e-mail
+      const { data: loginData, error: loginError } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (loginError) {
+        err.style.background = 'rgba(16,185,129,0.12)';
+        err.style.borderColor = 'rgba(16,185,129,0.3)';
+        err.style.color = '#6EE7B7';
+        err.textContent = 'Conta criada! Faça login para continuar.';
+        err.classList.add('show');
+        return;
+      }
+
+      // Salva perfil
+      const userId = loginData.user?.id || data.user?.id;
+      await sb.from('profiles').upsert({ id: userId, name, email });
+
+      // Redireciona direto
+      if (loginData.user?.email === ADMIN_EMAIL) window.location.href = 'admin.html';
+      else window.location.href = 'participant.html';
+    }
+
+    // Auto-redirect se já logado
+    (async () => {
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        if (user.email === ADMIN_EMAIL) window.location.href = 'admin.html';
+        else window.location.href = 'participant.html';
+      }
+    })();
+  </script>
+</body>
+</html>
